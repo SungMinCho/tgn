@@ -48,6 +48,7 @@ dense_iid_map = {k: v for v, k in enumerate(set(df.item_id))}
 
 df.user_id = df.user_id.map(dense_uid_map.get)
 df.item_id = df.item_id.map(dense_iid_map.get)
+df = df.sort_values(by='timestamp')
 
 print()
 print(df.head())
