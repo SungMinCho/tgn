@@ -7,6 +7,7 @@ import torch
 import numpy as np
 import pickle
 from pathlib import Path
+from tqdm import trange
 
 from evaluation.evaluation import eval_edge_prediction
 from model.tgn import TGN
@@ -177,7 +178,7 @@ for i in range(args.n_runs):
     m_loss = []
 
     logger.info('start {} epoch'.format(epoch))
-    for k in range(0, num_batch, args.backprop_every):
+    for k in trange(0, num_batch, args.backprop_every):
       loss = 0
       optimizer.zero_grad()
 
