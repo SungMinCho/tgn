@@ -39,7 +39,7 @@ parser.add_argument('--backprop_every', type=int, default=1, help='Every how man
 parser.add_argument('--use_memory', action='store_true',
                     help='Whether to augment the model with a node memory')
 parser.add_argument('--embedding_module', type=str, default="graph_attention", choices=[
-    "graph_attention", "graph_sum", "identity", "time"], help='Type of embedding module')
+    "graph_relative_attention", "graph_attention", "graph_sum", "identity", "time"], help='Type of embedding module')
 parser.add_argument('--message_function', type=str, default="identity", choices=[
     "mlp", "identity"], help='Type of message function')
 parser.add_argument('--aggregator', type=str, default="last", help='Type of message '
@@ -103,6 +103,7 @@ logger.info(args)
 node_features, edge_features, full_data, train_data, val_data, test_data, new_node_val_data, \
 new_node_test_data = get_data(DATA,
                               different_new_nodes_between_val_and_test=args.different_new_nodes)
+node_features = node_features[:, :args.memory_dim]
 
 # Initialize training neighbor finder to retrieve temporal graph
 train_ngh_finder = get_neighbor_finder(train_data, args.uniform)

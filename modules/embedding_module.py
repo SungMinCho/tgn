@@ -4,6 +4,7 @@ import numpy as np
 import math
 
 from model.temporal_attention import TemporalAttentionLayer
+from model.temporal_relative_attention import TemporalRelativeAttentionLayer
 
 
 class EmbeddingModule(nn.Module):
@@ -220,6 +221,43 @@ class GraphAttentionEmbedding(GraphEmbedding):
         return source_embedding
 
 
+class GraphRelativeAttentionEmbedding(GraphEmbedding):
+    def __init__(self, node_features, edge_features, memory, neighbor_finder, time_encoder, n_layers,
+                 n_node_features, n_edge_features, n_time_features, embedding_dimension, device,
+                 n_heads=2, dropout=0.1, use_memory=True):
+        super(GraphRelativeAttentionEmbedding, self).__init__(node_features, edge_features, memory,
+                                                              neighbor_finder, time_encoder, n_layers,
+                                                              n_node_features, n_edge_features,
+                                                              n_time_features,
+                                                              embedding_dimension, device,
+                                                              n_heads, dropout,
+                                                              use_memory)
+
+        self.attention_models = torch.nn.ModuleList([TemporalRelativeAttentionLayer(
+            n_node_features=n_node_features,
+            n_neighbors_features=n_node_features,
+            n_edge_features=n_edge_features,
+            time_dim=n_time_features,
+            n_head=n_heads,
+            dropout=dropout,
+            output_dimension=n_node_features)
+            for _ in range(n_layers)])
+
+    def aggregate(self, n_layer, source_node_features, source_nodes_time_embedding,
+                  neighbor_embeddings,
+                  edge_time_embeddings, edge_features, mask):
+        attention_model = self.attention_models[n_layer - 1]
+
+        source_embedding, _ = attention_model(source_node_features,
+                                              source_nodes_time_embedding,
+                                              neighbor_embeddings,
+                                              edge_time_embeddings,
+                                              edge_features,
+                                              mask)
+
+        return source_embedding
+
+
 def get_embedding_module(module_type, node_features, edge_features, memory, neighbor_finder,
                          time_encoder, n_layers, n_node_features, n_edge_features, n_time_features,
                          embedding_dimension, device,
@@ -227,6 +265,19 @@ def get_embedding_module(module_type, node_features, edge_features, memory, neig
                          use_memory=True):
     if module_type == "graph_attention":
         return GraphAttentionEmbedding(node_features=node_features,
+                                       edge_features=edge_features,
+                                       memory=memory,
+                                       neighbor_finder=neighbor_finder,
+                                       time_encoder=time_encoder,
+                                       n_layers=n_layers,
+                                       n_node_features=n_node_features,
+                                       n_edge_features=n_edge_features,
+                                       n_time_features=n_time_features,
+                                       embedding_dimension=embedding_dimension,
+                                       device=device,
+                                       n_heads=n_heads, dropout=dropout, use_memory=use_memory)
+    elif module_type == "graph_relative_attention":
+        return GraphRelativeAttentionEmbedding(node_features=node_features,
                                        edge_features=edge_features,
                                        memory=memory,
                                        neighbor_finder=neighbor_finder,
